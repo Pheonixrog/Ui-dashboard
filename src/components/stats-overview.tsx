@@ -3,12 +3,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CheckCircle, Clock, Hourglass, Circle, RefreshCw, AlertTriangle } from "lucide-react"
 import { motion } from "framer-motion"
-import { Task } from "@/types"
+import { Task, Status, Priority } from "@/types"
 import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 
 interface StatsOverviewProps {
-  tasks?: Task[]
+  tasks: Task[]
 }
 
 interface Stat {
@@ -19,33 +19,42 @@ interface Stat {
   color: string
 }
 
-export default function StatsOverview({ tasks = [] }: StatsOverviewProps) {
+export default function StatsOverview({ tasks }: StatsOverviewProps) {
   const [stats, setStats] = useState<Stat[]>([])
 
   useEffect(() => {
-    // Calculate stats based on tasks
+    // Calculate statistics
     const totalTasks = tasks.length
-    const completedTasks = tasks.filter(task => task.status === 'done').length
-    const inProgressTasks = tasks.filter(task => task.status === 'in-progress').length
-    const todoTasks = tasks.filter(task => task.status === 'todo').length
-    const reviewTasks = tasks.filter(task => task.status === 'review').length
-    const backlogTasks = tasks.filter(task => task.status === 'backlog').length
-    const highPriorityTasks = tasks.filter(task => task.priority === 'high').length
     
-    // Calculate completion rate
-    const completionRate = totalTasks > 0 
-      ? Math.round((completedTasks / totalTasks) * 100)
-      : 0
-      
-    // Calculate overdue tasks (assuming createdAt + 7 days is due date if not completed)
-    const now = new Date()
+    // Count tasks by status
+    const completedTasks = tasks.filter(task => task.status === Status.COMPLETED).length
+    const inProgressTasks = tasks.filter(task => task.status === Status.IN_PROGRESS).length
+    const todoTasks = tasks.filter(task => task.status === Status.TODO).length
+    const reviewTasks = tasks.filter(task => task.status === Status.IN_REVIEW).length
+    
+    // Count tasks by priority
+    const highPriorityTasks = tasks.filter(task => task.priority === Priority.HIGH).length
+    
+    // Calculate overdue tasks
     const overdueTasks = tasks.filter(task => {
-      if (task.status === 'done') return false
-      const dueDate = new Date(task.createdAt)
-      dueDate.setDate(dueDate.getDate() + 7)
-      return dueDate < now
+      const dueDate = new Date(task.dueDate)
+      const today = new Date()
+      return task.status !== Status.COMPLETED && dueDate < today
     }).length
     
+    // Calculate upcoming deadlines (tasks due in the next 7 days)
+    const upcomingDeadlines = tasks.filter(task => {
+      const dueDate = new Date(task.dueDate)
+      const today = new Date()
+      const oneWeek = new Date()
+      oneWeek.setDate(today.getDate() + 7)
+      
+      return task.status !== Status.COMPLETED && dueDate >= today && dueDate <= oneWeek
+    }).length
+    
+    // Calculate completion rate
+    const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+      
     const newStats: Stat[] = [
       {
         title: "Total Tasks",
@@ -77,8 +86,8 @@ export default function StatsOverview({ tasks = [] }: StatsOverviewProps) {
       },
       {
         title: "Upcoming",
-        value: todoTasks + backlogTasks,
-        description: `${todoTasks} to do, ${backlogTasks} backlog`,
+        value: todoTasks,
+        description: `${todoTasks} to do`,
         icon: <Clock className="h-6 w-6" />,
         color: "bg-indigo-500/20 text-indigo-500"
       },

@@ -6,7 +6,7 @@ import { activities as sampleActivities } from "@/data/sample-data"
 import { format, formatDistanceToNow } from "date-fns"
 import { motion, AnimatePresence } from "framer-motion"
 import { Activity, Task } from "@/types"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { BellRing, Check, RefreshCw, Plus, Edit, Trash, Clock } from "lucide-react"
 import { Badge } from "./ui/badge"
 
@@ -15,7 +15,29 @@ interface ActivityFeedProps {
 }
 
 export default function ActivityFeed({ tasks }: ActivityFeedProps) {
-  const [activities, setActivities] = useState<Activity[]>(sampleActivities)
+  const [activities, setActivities] = useState<Activity[]>([])
+
+  const getUserName = (userId: string): string => {
+    // This would typically come from a user service or API
+    const userMap: Record<string, string> = {
+      'user-01': 'Alex Johnson',
+      'user-02': 'Samantha Lee',
+      'user-03': 'David Chen',
+      'user-04': 'Maria Rodriguez',
+      'user-05': 'James Wilson',
+      'user-06': 'Emily Davis',
+      'user-07': 'Michael Brown',
+      'user-08': 'Michelle Kim',
+      'user-09': 'Robert Taylor',
+      'user-10': 'Jessica Martinez',
+      'user-11': 'Daniel Smith',
+      'user-12': 'Sarah Clark',
+      'user-13': 'Thomas Garcia',
+      'user-14': 'Rebecca Lewis',
+    };
+    
+    return userMap[userId] || 'Unknown User';
+  }
 
   // Generate activities based on tasks when they change
   useEffect(() => {
@@ -31,10 +53,15 @@ export default function ActivityFeed({ tasks }: ActivityFeedProps) {
     // Then add synthetic activities based on task dates
     tasks.forEach(task => {
       // Activity for task creation
-      const creationId = `creation-${task.id}`
+      const creationId = `create-${task.id}`
       activityMap[creationId] = {
         id: creationId,
-        user: task.assignee,
+        user: {
+          id: task.assigneeId,
+          name: getUserName(task.assigneeId),
+          avatar: "/avatars/01.png",
+          email: `${task.assigneeId}@example.com`,
+        },
         action: "created task",
         target: task.title,
         timestamp: task.createdAt,
@@ -45,7 +72,12 @@ export default function ActivityFeed({ tasks }: ActivityFeedProps) {
         const reviewId = `review-${task.id}`
         activityMap[reviewId] = {
           id: reviewId,
-          user: task.assignee,
+          user: {
+            id: task.assigneeId,
+            name: getUserName(task.assigneeId),
+            avatar: "/avatars/01.png",
+            email: `${task.assigneeId}@example.com`,
+          },
           action: "submitted for review",
           target: task.title,
           timestamp: new Date(new Date(task.createdAt).getTime() + 86400000).toISOString(), // 1 day after creation
@@ -54,13 +86,18 @@ export default function ActivityFeed({ tasks }: ActivityFeedProps) {
       
       // Activity for completed tasks
       if (task.status === 'done') {
-        const completedId = `completed-${task.id}`
-        activityMap[completedId] = {
-          id: completedId,
-          user: task.assignee,
+        const completionId = `complete-${task.id}`
+        activityMap[completionId] = {
+          id: completionId,
+          user: {
+            id: task.assigneeId,
+            name: getUserName(task.assigneeId),
+            avatar: "/avatars/01.png",
+            email: `${task.assigneeId}@example.com`,
+          },
           action: "completed task",
           target: task.title,
-          timestamp: new Date(new Date(task.createdAt).getTime() + 172800000).toISOString(), // 2 days after creation
+          timestamp: task.updatedAt,
         }
       }
     })

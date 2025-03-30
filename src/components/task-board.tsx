@@ -5,10 +5,10 @@ import { DndProvider, useDrag, useDrop } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Task, Status, Priority } from '@/types'
-import { users } from '@/data/sample-data'
+import { userOptions } from "@/app/(dashboard)/tasks/data"
 import { format } from 'date-fns'
 import { 
   CheckCircle2, 
@@ -16,41 +16,34 @@ import {
   Calendar, 
   AlertTriangle, 
   Plus,
-  Search,
   Edit,
   Trash,
   Eye,
-  Filter,
   ListFilter,
   ArrowDownCircle,
   ArrowRightCircle,
   ArrowUpCircle,
   AlertOctagon,
-  MessageSquare,
   MoreHorizontal,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import TaskDialog from './task-dialog'
+import { TaskDialog } from "@/components/task-dialog"
 import { Button } from './ui/button'
 import TaskDrawer from './task-drawer'
 import { useToast } from '@/hooks/use-toast'
 import ConfirmDialog from './confirm-dialog'
 import TaskSearch, { TaskFilters } from './task-search'
 import { cn } from '@/lib/utils'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 
 interface TaskCardProps {
   task: Task
-  onDrag: (id: string, status: Status) => void
   onView: (task: Task) => void
   onEdit: (task: Task) => void
   onDelete: (taskId: string) => void
 }
 
-function TaskCard({ task, onDrag, onView, onEdit, onDelete }: TaskCardProps) {
-  const { toast } = useToast()
-  
+function TaskCard({ task, onView, onEdit, onDelete }: TaskCardProps) {
   const [{ isDragging }, dragRef] = useDrag({
     type: 'TASK',
     item: { id: task.id, status: task.status },
@@ -97,158 +90,160 @@ function TaskCard({ task, onDrag, onView, onEdit, onDelete }: TaskCardProps) {
   const isOverdue = new Date(task.dueDate) < new Date()
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      whileHover={{ scale: 1.02 }}
-      transition={{ duration: 0.2 }}
+    <div
       className={cn(
         "group w-full cursor-grab task-card-hover",
         isDragging && "rotate-2 scale-95 cursor-grabbing"
       )}
       ref={dragRef}
     >
-      <Card className={cn(
-        "backdrop-blur-sm transition-all duration-200 shadow-md border-2 smooth-border bg-card",
-        isDragging 
-          ? "opacity-60 border-primary/30 bg-primary/5 rotate-2" 
-          : "border-border hover:border-primary/20"
-      )}>
-        <CardHeader className="p-3 pb-2">
-          <div className="flex items-start justify-between gap-2">
-            <div 
-              className="flex-1 cursor-pointer group-hover:text-primary transition-colors"
-              onClick={() => onView(task)}
-            >
-              <h3 className="font-semibold text-base line-clamp-2">
-                {task.title}
-              </h3>
-            </div>
-            
-            <Badge className={cn(
-              "shrink-0 transition-colors rounded-full px-2 py-0.5 text-xs border",
-              statusColors[task.status]
-            )}>
-              {task.status === 'in-progress' ? 'in progress' : task.status}
-            </Badge>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-7 w-7 cursor-pointer hover:bg-accent transition-colors rounded-full">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onView(task)} className="cursor-pointer">
-                  <Eye className="h-4 w-4 mr-2" />
-                  View
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onEdit(task)} className="cursor-pointer">
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onDelete(task.id)} className="text-destructive cursor-pointer">
-                  <Trash className="h-4 w-4 mr-2" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </CardHeader>
-
-        <CardContent className="px-3 pb-3 space-y-3">
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {task.description}
-          </p>
-
-          <div className="flex flex-wrap gap-1.5">
-            <Badge className={cn(
-              "shrink-0 transition-all duration-200 flex items-center gap-1 cursor-default",
-              priorityColors[task.priority].bg,
-              priorityColors[task.priority].text,
-              priorityColors[task.priority].border,
-            )}>
-              {priorityColors[task.priority].icon}
-              <span>{task.priority}</span>
-            </Badge>
-            
-            {task.tags.length > 0 && task.tags.slice(0, 2).map((tag) => (
-              <Badge 
-                key={tag} 
-                variant="secondary" 
-                className="cursor-default"
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        whileHover={{ scale: 1.02 }}
+        transition={{ duration: 0.2 }}
+      >
+        <Card className={cn(
+          "backdrop-blur-sm transition-all duration-200 shadow-md border-2 smooth-border bg-card",
+          isDragging 
+            ? "opacity-60 border-primary/30 bg-primary/5 rotate-2" 
+            : "border-border hover:border-primary/20"
+        )}>
+          <CardHeader className="p-3 pb-2">
+            <div className="flex items-start justify-between gap-2">
+              <div 
+                className="flex-1 cursor-pointer group-hover:text-primary transition-colors"
+                onClick={() => onView(task)}
               >
-                {tag}
+                <h3 className="font-semibold text-base line-clamp-2">
+                  {task.title}
+                </h3>
+              </div>
+              
+              <Badge className={cn(
+                "shrink-0 transition-colors rounded-full px-2 py-0.5 text-xs border",
+                statusColors[task.status]
+              )}>
+                {task.status === 'in-progress' ? 'in progress' : task.status}
               </Badge>
-            ))}
-            
-            {task.tags.length > 2 && (
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 cursor-pointer hover:bg-accent transition-colors rounded-full">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onView(task)} className="cursor-pointer">
+                    <Eye className="h-4 w-4 mr-2" />
+                    View
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onEdit(task)} className="cursor-pointer">
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onDelete(task.id)} className="text-destructive cursor-pointer">
+                    <Trash className="h-4 w-4 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </CardHeader>
+
+          <CardContent className="px-3 pb-3 space-y-3">
+            <p className="text-sm text-muted-foreground line-clamp-2">
+              {task.description}
+            </p>
+
+            <div className="flex flex-wrap gap-1.5">
+              <Badge className={cn(
+                "shrink-0 transition-all duration-200 flex items-center gap-1 cursor-default",
+                priorityColors[task.priority].bg,
+                priorityColors[task.priority].text,
+                priorityColors[task.priority].border,
+              )}>
+                {priorityColors[task.priority].icon}
+                <span>{task.priority}</span>
+              </Badge>
+              
+              {task.tags.length > 0 && task.tags.slice(0, 2).map((tag) => (
+                <Badge 
+                  key={tag} 
+                  variant="secondary" 
+                  className="cursor-default"
+                >
+                  {tag}
+                </Badge>
+              ))}
+              
+              {task.tags.length > 2 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant="outline" className="hover:bg-secondary/50 cursor-pointer">
+                        +{task.tags.length - 2}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {task.tags.slice(2).join(', ')}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Badge variant="outline" className="hover:bg-secondary/50 cursor-pointer">
-                      +{task.tags.length - 2}
-                    </Badge>
+                    <div className="flex items-center gap-1.5 text-sm cursor-pointer">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className={cn(
+                        "font-medium",
+                        isOverdue && task.status !== 'done' ? "text-destructive" : "text-muted-foreground"
+                      )}>
+                        {format(new Date(task.dueDate), 'MMM d')}
+                      </span>
+                      {isOverdue && task.status !== 'done' && (
+                        <Badge variant="destructive" className="h-5 px-1">
+                          <Clock className="h-3 w-3" />
+                        </Badge>
+                      )}
+                    </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    {task.tags.slice(2).join(', ')}
+                    <p>Due: {format(new Date(task.dueDate), 'MMMM d, yyyy')}</p>
+                    {isOverdue && task.status !== 'done' && <p>Task is overdue</p>}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-            )}
-          </div>
 
-          <div className="flex items-center justify-between pt-1">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1.5 text-sm cursor-pointer">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className={cn(
-                      "font-medium",
-                      isOverdue && task.status !== 'done' ? "text-destructive" : "text-muted-foreground"
-                    )}>
-                      {format(new Date(task.dueDate), 'MMM d')}
-                    </span>
-                    {isOverdue && task.status !== 'done' && (
-                      <Badge variant="destructive" className="h-5 px-1">
-                        <Clock className="h-3 w-3" />
-                      </Badge>
-                    )}
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Due: {format(new Date(task.dueDate), 'MMMM d, yyyy')}</p>
-                  {isOverdue && task.status !== 'done' && <p>Task is overdue</p>}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1 cursor-pointer">
-                    <Badge className={cn(
-                      "rounded-full h-2 w-2 p-0",
-                      task.status === 'done' ? "bg-emerald-500" : "bg-slate-300"
-                    )} />
-                    <Avatar className="h-7 w-7 ring-2 ring-background">
-                      <AvatarImage src={task.assignee.avatar} alt={task.assignee.name} />
-                      <AvatarFallback>{task.assignee.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Assigned to {task.assignee.name}</p>
-                  <p className="text-xs text-muted-foreground">{task.assignee.email}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1 cursor-pointer">
+                      <Badge className={cn(
+                        "rounded-full h-2 w-2 p-0",
+                        task.status === 'done' ? "bg-emerald-500" : "bg-slate-300"
+                      )} />
+                      <Avatar className="h-7 w-7 ring-2 ring-background">
+                        <AvatarImage src="/avatars/01.png" alt="Avatar" />
+                        <AvatarFallback>{task.assigneeId.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Assigned to {task.assigneeId}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </div>
   )
 }
 
@@ -387,7 +382,7 @@ function Column({
         isOver && "bg-primary/5"
       )}>
         {tasks.length === 0 ? (
-          <div className="text-center text-sm text-muted-foreground py-8 italic border-2 border-dashed rounded-lg border-border w-full">
+          <div className="text-center text-sm text-muted-foreground py-20 italic border-2 border-dashed rounded-lg border-border w-full">
             <p>Drop tasks here</p>
           </div>
         ) : (
@@ -405,7 +400,6 @@ function Column({
                 >
                   <TaskCard 
                     task={task} 
-                    onDrag={onDrop} 
                     onView={onViewTask}
                     onEdit={onEditTask}
                     onDelete={onDeleteTask}
@@ -441,6 +435,7 @@ export default function TaskBoard({ tasks: propTasks, onTasksChange }: { tasks: 
     if (propTasks !== tasks) {
       setTasks(propTasks)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [propTasks])
 
   useEffect(() => {
@@ -547,49 +542,54 @@ export default function TaskBoard({ tasks: propTasks, onTasksChange }: { tasks: 
     })
   }
 
-  const handleSubmitTask = async (data: any) => {
+  const handleSubmitTask = (data: {
+    title: string;
+    description: string;
+    status: string;
+    priority: string;
+    assigneeId: string;
+    dueDate: string;
+    tags: string[];
+  }) => {
+    setIsSubmitting(true);
+    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      // If it's an edit, update the existing task
       if (selectedTask) {
-        // Update existing task
-        setTasks(prev => {
-          return prev.map(task => {
-            if (task.id === selectedTask.id) {
-              return {
-                ...task,
-                title: data.title,
-                description: data.description,
-                status: data.status,
-                priority: data.priority,
-                assignee: users.find(user => user.id === data.assigneeId) || task.assignee,
-                dueDate: data.dueDate.toISOString(),
-                tags: data.tags,
-              }
-            }
-            return task
-          })
-        })
+        const updatedTask = {
+          ...selectedTask,
+          title: data.title,
+          description: data.description,
+          status: data.status as Status,
+          priority: data.priority as Priority,
+          assigneeId: data.assigneeId,
+          dueDate: data.dueDate,
+          tags: data.tags,
+          updatedAt: new Date().toISOString().split('T')[0],
+        };
+        
+        setTasks(prev => prev.map(task => task.id === updatedTask.id ? updatedTask : task))
         
         toast({
           title: "Task updated",
           description: "Task has been updated successfully.",
           variant: "success",
         })
-      } else {
-        // Create new task
+      } 
+      // Otherwise create a new task
+      else {
         const newTask: Task = {
           id: `task${tasks.length + 1}`,
           title: data.title,
           description: data.description,
-          status: selectedStatus,
-          priority: data.priority,
-          createdAt: new Date().toISOString(),
-          dueDate: data.dueDate.toISOString(),
-          assignee: users.find(user => user.id === data.assigneeId) || users[0],
+          status: data.status as Status,
+          priority: data.priority as Priority,
+          createdAt: new Date().toISOString().split('T')[0],
+          dueDate: data.dueDate,
+          assignee: userOptions.find(user => user.id === data.assigneeId) || userOptions[0],
           tags: data.tags,
-        }
+          updatedAt: new Date().toISOString().split('T')[0],
+        };
         
         setTasks(prev => [...prev, newTask])
         
@@ -601,12 +601,10 @@ export default function TaskBoard({ tasks: propTasks, onTasksChange }: { tasks: 
       }
       
       setDialogOpen(false)
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "An error occurred. Please try again.",
-        variant: "destructive",
-      })
+    } catch {
+      // Handle error
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -636,7 +634,7 @@ export default function TaskBoard({ tasks: propTasks, onTasksChange }: { tasks: 
           filters={filters} 
           onFiltersChange={setFilters} 
           tasks={tasks}
-          users={users}
+          users={userOptions}
           onClearFilters={handleClearFilters}
         />
       </div>
@@ -664,7 +662,7 @@ export default function TaskBoard({ tasks: propTasks, onTasksChange }: { tasks: 
 
       <div className="flex-1 overflow-auto">
         <DndProvider backend={HTML5Backend}>
-          <div className="flex flex-col gap-6 pb-6 px-1 overflow-y-auto h-full max-h-[calc(100vh-160px)] custom-scrollbar">
+          <div className="flex flex-col gap-6 pb-6 px-1 overflow-y-auto h-full max-h-[calc(100vh-60px)] custom-scrollbar">
             <Column 
               status="backlog" 
               tasks={getTasksByStatus('backlog')} 
@@ -720,7 +718,7 @@ export default function TaskBoard({ tasks: propTasks, onTasksChange }: { tasks: 
         defaultValues={selectedTask}
         isEditing={isEditing}
         onSubmit={handleSubmitTask}
-        users={users}
+        users={userOptions}
       />
 
       <TaskDrawer

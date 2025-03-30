@@ -1,6 +1,15 @@
-export type Status = 'backlog' | 'todo' | 'in-progress' | 'review' | 'done';
+export enum Status {
+  TODO = 'todo',
+  IN_PROGRESS = 'in-progress',
+  IN_REVIEW = 'review',
+  COMPLETED = 'done'
+}
 
-export type Priority = 'low' | 'medium' | 'high' | 'urgent';
+export enum Priority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high'
+}
 
 export type User = {
   id: string;
@@ -16,8 +25,9 @@ export type Task = {
   status: Status;
   priority: Priority;
   createdAt: string;
+  updatedAt: string;
   dueDate: string;
-  assignee: User;
+  assigneeId: string;
   tags: string[];
 };
 

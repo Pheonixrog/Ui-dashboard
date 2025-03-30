@@ -27,17 +27,26 @@ function Particles({ count = 500 }) {
   })
 
   useEffect(() => {
-    if (!mesh.current) return
-    
-    positions.forEach(({ position, scale }, i) => {
-      temp.position.set(position.x, position.y, position.z)
-      temp.scale.set(scale, scale, scale)
-      temp.updateMatrix()
-      mesh.current?.setMatrixAt(i, temp.matrix)
-    })
-    
-    mesh.current.instanceMatrix.needsUpdate = true
-  }, [])
+    const interval = setInterval(() => {
+      if (!mesh.current) return
+
+      for (let i = 0; i < positions.length; i++) {
+        const x = positions[i].position.x
+        const y = positions[i].position.y
+        const z = positions[i].position.z
+
+        temp.position.set(x, y, z)
+        temp.scale.set(positions[i].scale, positions[i].scale, positions[i].scale)
+        temp.updateMatrix()
+        mesh.current?.setMatrixAt(i, temp.matrix)
+      }
+
+      mesh.current.instanceMatrix.needsUpdate = true
+    }, 10)
+
+    return () => clearInterval(interval)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [positions, temp])
 
   return (
     <instancedMesh ref={mesh} args={[undefined, undefined, count]}>

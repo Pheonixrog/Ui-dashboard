@@ -1,12 +1,13 @@
 'use client'
 
+import React from "react"
+import { Input } from "@/components/ui/input"
+import { Search, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
 import { Priority, Status, Task, User } from "@/types"
 import { motion } from "framer-motion"
-import { Search, X, SlidersHorizontal, Check } from "lucide-react"
-import { useState } from "react"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -29,17 +30,26 @@ interface TaskSearchProps {
   onClearFilters: () => void
   tasks: Task[]
   users: User[]
+  searchQuery: string
+  onSearchChange: (query: string) => void
+  onClearSearch: () => void
+  placeholder?: string
+  activeFilters?: { id: string; label: string }[]
+  onRemoveFilter?: (id: string) => void
 }
 
 export default function TaskSearch({
   filters,
   onFiltersChange,
   onClearFilters,
-  tasks,
   users,
+  searchQuery,
+  onSearchChange,
+  onClearSearch,
+  placeholder = "Search tasks...",
+  activeFilters = [],
+  onRemoveFilter,
 }: TaskSearchProps) {
-  const [showFilters, setShowFilters] = useState(false)
-
   const statusOptions: { value: Status | 'all'; label: string }[] = [
     { value: 'all', label: "All Statuses" },
     { value: "backlog", label: "Backlog" },
@@ -92,178 +102,54 @@ export default function TaskSearch({
   }
 
   return (
-    <div>
-      <div className="flex items-center space-x-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search tasks..."
-            className="pl-8 bg-background border-2 focus-visible:ring-0 focus-visible:border-primary"
-            value={filters.search}
-            onChange={handleSearchChange}
-          />
-          {filters.search && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-0.5 top-0.5 h-8 w-8 text-muted-foreground hover:text-foreground"
-              onClick={() => onFiltersChange({ ...filters, search: "" })}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              className={`border-2 ${hasActiveFilters ? 'border-primary text-primary' : ''}`}
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>Filter Tasks</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            
-            <DropdownMenuLabel className="font-normal text-xs text-muted-foreground pt-2">
-              Status
-            </DropdownMenuLabel>
-            {statusOptions.map((status) => (
-              <DropdownMenuCheckboxItem
-                key={status.value}
-                checked={
-                  status.value === 'all' 
-                    ? !filters.status 
-                    : filters.status === status.value
-                }
-                onCheckedChange={() => handleStatusChange(status.value)}
-              >
-                {status.label}
-              </DropdownMenuCheckboxItem>
-            ))}
-            
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel className="font-normal text-xs text-muted-foreground pt-2">
-              Priority
-            </DropdownMenuLabel>
-            {priorityOptions.map((priority) => (
-              <DropdownMenuCheckboxItem
-                key={priority.value}
-                checked={
-                  priority.value === 'all' 
-                    ? !filters.priority 
-                    : filters.priority === priority.value
-                }
-                onCheckedChange={() => handlePriorityChange(priority.value)}
-              >
-                <div className="flex items-center">
-                  <div className={`w-2 h-2 rounded-full ${priority.color} mr-2`}></div>
-                  {priority.label}
-                </div>
-              </DropdownMenuCheckboxItem>
-            ))}
-            
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel className="font-normal text-xs text-muted-foreground pt-2">
-              Assignee
-            </DropdownMenuLabel>
-            <DropdownMenuCheckboxItem
-              checked={!filters.assignee}
-              onCheckedChange={() => handleAssigneeChange('all')}
-            >
-              All Assignees
-            </DropdownMenuCheckboxItem>
-            {users.map((user) => (
-              <DropdownMenuCheckboxItem
-                key={user.id}
-                checked={filters.assignee === user.id}
-                onCheckedChange={() => handleAssigneeChange(user.id)}
-              >
-                {user.name}
-              </DropdownMenuCheckboxItem>
-            ))}
-            
-            <DropdownMenuSeparator />
-            <div className="p-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full text-xs"
-                onClick={onClearFilters}
-                disabled={!hasActiveFilters}
-              >
-                Clear Filters
-              </Button>
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
+    <div className="w-full space-y-2">
+      <div className="relative">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          type="text"
+          placeholder={placeholder}
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="pl-8 pr-10 border-border/50 bg-background/50 focus-visible:bg-background"
+        />
+        {searchQuery && (
+          <Button
+            variant="ghost"
+            className="absolute right-0 top-0 h-9 w-9 p-0"
+            onClick={onClearSearch}
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Clear search</span>
+          </Button>
+        )}
       </div>
       
-      {hasActiveFilters && (
-        <motion.div 
-          className="flex flex-wrap gap-2 mt-3"
-          initial={{ y: -10, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-        >
-          {filters.status && (
-            <Badge variant="secondary" className="px-2 py-0.5 gap-1">
-              {statusOptions.find(s => s.value === filters.status)?.label}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-4 w-4 p-0 ml-1 text-muted-foreground hover:text-foreground"
-                onClick={() => handleStatusChange('all')}
-              >
-                <X className="h-3 w-3" />
-              </Button>
+      {activeFilters.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {activeFilters.map((filter) => (
+            <Badge
+              key={filter.id}
+              variant="secondary"
+              className={cn(
+                "py-1 px-2 text-xs",
+                onRemoveFilter && "pr-1"
+              )}
+            >
+              {filter.label}
+              {onRemoveFilter && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-4 w-4 p-0 ml-1 hover:bg-secondary-foreground/10 rounded-full"
+                  onClick={() => onRemoveFilter(filter.id)}
+                >
+                  <X className="h-2.5 w-2.5" />
+                  <span className="sr-only">Remove {filter.label} filter</span>
+                </Button>
+              )}
             </Badge>
-          )}
-          
-          {filters.priority && (
-            <Badge variant="secondary" className="px-2 py-0.5 gap-1">
-              {priorityOptions.find(p => p.value === filters.priority)?.label}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-4 w-4 p-0 ml-1 text-muted-foreground hover:text-foreground"
-                onClick={() => handlePriorityChange('all')}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </Badge>
-          )}
-          
-          {filters.assignee && (
-            <Badge variant="secondary" className="px-2 py-0.5 gap-1">
-              {users.find(u => u.id === filters.assignee)?.name || 'Unknown'}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-4 w-4 p-0 ml-1 text-muted-foreground hover:text-foreground"
-                onClick={() => handleAssigneeChange('all')}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </Badge>
-          )}
-          
-          {filters.search && (
-            <Badge variant="secondary" className="px-2 py-0.5 gap-1">
-              "{filters.search}"
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-4 w-4 p-0 ml-1 text-muted-foreground hover:text-foreground"
-                onClick={() => onFiltersChange({...filters, search: ""})}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </Badge>
-          )}
-        </motion.div>
+          ))}
+        </div>
       )}
     </div>
   )
